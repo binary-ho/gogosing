@@ -1,18 +1,8 @@
 package main
 
-import "fmt"
-
-//type SplayTree struct {
-//	root *SplayTreeNode
-//}
-
-//type SplayTreeInterface interface {
-//	GetRoot() *SplayTreeNode
-//	Find(key int) *SplayTreeNode
-//
-//	Rotate(node *SplayTreeNode)
-//	Splay(node *SplayTreeNode)
-//}
+import (
+	"fmt"
+)
 
 type SplayTree struct {
 	root *SplayTreeNode
@@ -21,6 +11,7 @@ type SplayTree struct {
 type SplayTreeNode struct {
 	key                 int
 	left, right, parent *SplayTreeNode
+	size                int
 }
 
 func (node *SplayTreeNode) isNil() bool {
@@ -31,8 +22,20 @@ func (node *SplayTreeNode) isPresent() bool {
 	return node != nil
 }
 
+func (node *SplayTreeNode) updateSize() {
+	node.size = 1
+	if node.left.isPresent() {
+		node.size += node.left.size
+	}
+
+	if node.right.isPresent() {
+		node.size += node.right.size
+	}
+}
+
 func (tree *SplayTree) Rotate(node *SplayTreeNode) {
-	if node.parent.isNil() {
+	parent := node.parent
+	if parent.isNil() {
 		return
 	}
 
@@ -42,6 +45,10 @@ func (tree *SplayTree) Rotate(node *SplayTreeNode) {
 	if node.parent.isNil() {
 		tree.root = node
 	}
+
+	// update Child Count
+	node.updateSize()
+	parent.updateSize()
 }
 
 func (tree *SplayTree) Splay(node *SplayTreeNode) {
@@ -153,6 +160,32 @@ func (tree *SplayTree) Delete(key int) {
 	default:
 		tree.root = nil
 	}
+}
+
+func (tree *SplayTree) GetKthNode(k int) int {
+	fmt.Printf("Get %d th Node", k)
+	k -= 1
+	node := tree.root
+	for node.isPresent() {
+		for node.left.isPresent() && node.left.size > k {
+			node = node.left
+		}
+
+		if node.left.isPresent() {
+			k -= node.left.size
+		}
+
+		if k == 0 {
+			break
+		}
+
+		k--
+		node = node.right
+	}
+
+	tree.Splay(node)
+	fmt.Printf(" -> %d\n", node.key)
+	return node.key
 }
 
 func (node *SplayTreeNode) setGrandParentToParent() {

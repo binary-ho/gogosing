@@ -43,13 +43,22 @@ func main() {
 
 	tree.Find(3)
 	tree.PrintDFS()
+	//
+	//tree.Delete(7)
+	//tree.PrintDFS()
+	//
+	//tree.Delete(3)
+	//tree.PrintDFS()
+	//
+	//tree.Delete(1)
+	//tree.PrintDFS()
 
-	tree.Delete(7)
-	tree.PrintDFS()
-
-	tree.Delete(3)
-	tree.PrintDFS()
-
-	tree.Delete(1)
-	tree.PrintDFS()
+	tree.GetKthNode(3)
+	tree.GetKthNode(6)
+	tree.GetKthNode(2)
+	tree.GetKthNode(1)
+	tree.GetKthNode(8)
+	tree.GetKthNode(5)
+	tree.GetKthNode(7)
+	tree.GetKthNode(4)
 }
