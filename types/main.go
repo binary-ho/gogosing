@@ -1,6 +1,8 @@
 package main
 
 func main() {
-
-	testPointer()
+	//testPointer()
+	//printVertex()
+	//printVertex2()
+	printVertex3()
 }
