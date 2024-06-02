@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"math"
+	"os"
 )
 
 type SplayTree struct {
@@ -9,9 +12,9 @@ type SplayTree struct {
 }
 
 type SplayTreeNode struct {
-	key                 int
+	key                 int64
 	left, right, parent *SplayTreeNode
-	size                int
+	size, sum, lazy     int64
 }
 
 func (node *SplayTreeNode) isNil() bool {
@@ -22,14 +25,18 @@ func (node *SplayTreeNode) isPresent() bool {
 	return node != nil
 }
 
-func (node *SplayTreeNode) updateSize() {
+func (node *SplayTreeNode) updateTreeSizeAndSum() {
 	node.size = 1
+	node.sum = node.key
+
 	if node.left.isPresent() {
 		node.size += node.left.size
+		node.sum += node.left.sum
 	}
 
 	if node.right.isPresent() {
 		node.size += node.right.size
+		node.sum += node.right.sum
 	}
 }
 
@@ -47,12 +54,14 @@ func (tree *SplayTree) Rotate(node *SplayTreeNode) {
 	}
 
 	// update Child Count
-	node.updateSize()
-	parent.updateSize()
+	node.updateTreeSizeAndSum()
+	parent.updateTreeSizeAndSum()
+	node.pushLazyValue()
+	parent.pushLazyValue()
 }
 
 func (tree *SplayTree) Splay(node *SplayTreeNode) {
-	if tree.root.isNil() {
+	if tree.root.isNil() || node.isNil() || node == tree.root {
 		return
 	}
 
@@ -79,18 +88,28 @@ func (tree *SplayTree) Splay(node *SplayTreeNode) {
 	}
 }
 
-func (tree *SplayTree) gather(start, end int) {
-	tree.GetKthNode(end + 1)
+func (tree *SplayTree) GetRangeSubtreeRootWithGather(start, end int64) *SplayTreeNode {
+	tree.gather(start, end)
+
+	subtreeRoot := tree.root.right.left
+	subtreeRoot.pushLazyValue()
+	return subtreeRoot
+}
+
+func (tree *SplayTree) gather(start, end int64) {
+	tree.GetKthNodeAndPush(end + 1)
 	endNode := tree.root
 
-	tree.GetKthNode(start - 1)
+	tree.GetKthNodeAndPush(start - 1)
 	startNode := tree.root
 
+	//tree.PrintDFS()
 	tree.splayAndSetChild(startNode, endNode)
 }
 
 func (tree *SplayTree) splayAndSetChild(rootNode *SplayTreeNode, child *SplayTreeNode) {
-	for child.parent != rootNode {
+	// TODO : 여기 의심
+	for child.parent != rootNode && child != tree.root {
 		parent := child.parent
 
 		if parent.parent == rootNode {
@@ -109,13 +128,14 @@ func (tree *SplayTree) splayAndSetChild(rootNode *SplayTreeNode, child *SplayTre
 		}
 	}
 
+	child.updateTreeSizeAndSum()
 	if rootNode.isNil() {
 		tree.root = child
 	}
 }
 
-func (tree *SplayTree) Find(key int) *SplayTreeNode {
-	fmt.Println("Find key: ", key)
+func (tree *SplayTree) Find(key int64) *SplayTreeNode {
+	//fmt.Println("Find key: ", key)
 	if tree.root.isNil() {
 		return nil
 	}
@@ -130,7 +150,7 @@ func (tree *SplayTree) Find(key int) *SplayTreeNode {
 	}
 }
 
-func (tree *SplayTree) findNodeAndParent(key int) (node, parent *SplayTreeNode) {
+func (tree *SplayTree) findNodeAndParent(key int64) (node, parent *SplayTreeNode) {
 	node = tree.root
 	for node.isPresent() && key != node.key {
 		parent = node
@@ -144,29 +164,29 @@ func (tree *SplayTree) findNodeAndParent(key int) (node, parent *SplayTreeNode) 
 	return node, parent
 }
 
-func (tree *SplayTree) Insert(key int) {
-	fmt.Println("Insert key: ", key)
+func (tree *SplayTree) Insert(key int64) {
+	//fmt.Println("Insert key: ", key)
 	if tree.root.isNil() {
-		tree.root = &SplayTreeNode{key: key}
+		tree.root = &SplayTreeNode{key: key, size: 1, sum: key}
 		return
 	}
 
-	node, parent := tree.findNodeAndParent(key)
-	if node.isPresent() {
-		return
-	}
+	_, parent := tree.findNodeAndParent(key)
+	//if node.isPresent() {
+	//	return
+	//}
 
-	newNode := &SplayTreeNode{key: key, parent: parent}
+	newNode := &SplayTreeNode{key: key, parent: parent, size: 1, sum: key}
 	if key < parent.key {
 		parent.left = newNode
 	} else {
 		parent.right = newNode
 	}
-	tree.Splay(newNode)
+	tree.splayAndSetChild(nil, newNode)
 }
 
-func (tree *SplayTree) Delete(key int) {
-	fmt.Println("Delete key: ", key)
+func (tree *SplayTree) Delete(key int64) {
+	//fmt.Println("Delete key: ", key)
 	if tree.Find(key).isNil() {
 		return
 	}
@@ -197,8 +217,18 @@ func (tree *SplayTree) Delete(key int) {
 	}
 }
 
-func (tree *SplayTree) GetKthNode(k int) int {
-	fmt.Printf("Get %d th Node", k)
+func (tree *SplayTree) SumRange(start, end, value int64) {
+	subtreeRoot := tree.GetRangeSubtreeRootWithGather(start, end)
+	tree.root.updateTreeSizeAndSum()
+	if subtreeRoot.isNil() {
+		return
+	}
+	subtreeRoot.sum += subtreeRoot.size * value
+	subtreeRoot.lazy += value
+}
+
+func (tree *SplayTree) GetKthNode(k int64) int64 {
+	//fmt.Printf("Get %d th Node", k)
 	k -= 1
 	node := tree.root
 	for node.isPresent() {
@@ -219,8 +249,59 @@ func (tree *SplayTree) GetKthNode(k int) int {
 	}
 
 	tree.Splay(node)
-	fmt.Printf(" -> %d\n", node.key)
+	//fmt.Printf(" -> %d\n", node.key)
 	return node.key
+}
+
+func (tree *SplayTree) GetKthNodeAndPush(k int64) {
+	//fmt.Printf("Get %d th Node And Push\n", k)
+	//k -= 1	// 더미 떄문에 삭제
+	node := tree.root
+	node.pushLazyValue()
+
+	for node.isPresent() {
+		for node.left.isPresent() && node.left.size > k {
+			node = node.left
+			node.pushLazyValue()
+		}
+
+		if node.left.isPresent() {
+			k -= node.left.size
+		}
+
+		if k == 0 {
+			break
+		}
+
+		k--
+		node = node.right
+		if node.isPresent() {
+			node.pushLazyValue()
+		}
+	}
+
+	tree.Splay(node)
+	//fmt.Printf(" -> %d\n", node.key)
+	return
+}
+
+func (node *SplayTreeNode) pushLazyValue() {
+	lazyValue := node.lazy
+	node.lazy = 0
+
+	if node.key != math.MinInt64 && node.key != math.MaxInt64 {
+		node.key += lazyValue
+	}
+
+	if left := node.left; left.isPresent() {
+		left.lazy += lazyValue
+		left.sum += left.size * lazyValue
+	}
+
+	if right := node.right; right.isPresent() {
+		right.lazy += lazyValue
+		right.sum += right.size * lazyValue
+	}
 }
 
 func (node *SplayTreeNode) setGrandParentToParent() {
@@ -231,15 +312,20 @@ func (node *SplayTreeNode) setGrandParentToParent() {
 	node.parent = grandParent
 	parent.parent = node
 
-	if grandParent.isNil() {
+	if node.parent.isNil() {
 		return
 	}
 
-	if parent == grandParent.left {
-		grandParent.left = node
+	// TODO : grandParent로 바꾸기
+	if parent == node.parent.left {
+		node.parent.left = node
 	} else {
-		grandParent.right = node
+		node.parent.right = node
 	}
+
+	// TODO : 중복 제거
+	node.updateTreeSizeAndSum()
+	parent.updateTreeSizeAndSum()
 }
 
 func (node *SplayTreeNode) setParentToChild() {
@@ -294,4 +380,51 @@ func getIndent(level int) string {
 		indent += "  "
 	}
 	return indent
+}
+
+func main() {
+	reader := bufio.NewReader(os.Stdin)
+	writer := bufio.NewWriter(os.Stdout)
+
+	var N, M, K int
+	//fmt.Fscanf(reader, "%d %d %d", &N, &M, &K)
+	fmt.Fscanln(reader, &N, &M, &K)
+
+	tree := &SplayTree{root: nil}
+	tree.Insert(math.MinInt64)
+	for i := 0; i < N; i++ {
+		var value int64
+		//fmt.Fscanf(reader, "%d", &value)
+		fmt.Fscanln(reader, &value)
+		//fmt.Println(value)
+		tree.Insert(value)
+	}
+	tree.Insert(math.MaxInt64)
+
+	const (
+		SUM     = 1
+		GET_SUM = 2
+	)
+
+	for i := 0; i < M+K; i++ {
+		var command, start, end, value int64
+		//fmt.Fscanf(reader, "%d %d %d", &command, &start, &end)
+		fmt.Fscanln(reader, &command, &start, &end, &value)
+		//fmt.Printf("%d %d %d %d\n", command, start, end, value)
+
+		switch command {
+		case SUM:
+			//fmt.Fscanf(reader, "%d", &value)
+			tree.SumRange(start, end, value)
+			//fmt.Fprintf(writer, "%d %d %d %d\n", command, start, end, value)
+
+		case GET_SUM:
+			subtreeRoot := tree.GetRangeSubtreeRootWithGather(start, end)
+			fmt.Fprintf(writer, "%d\n", subtreeRoot.sum)
+			//fmt.Println(subtreeRoot.sum)
+			//fmt.Fprintf(writer, "%d %d %d %d\n", command, start, end, value)
+		}
+	}
+
+	writer.Flush()
 }

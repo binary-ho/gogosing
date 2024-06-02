@@ -1,6 +1,6 @@
 package main
 
-func main() {
+func mainOrigin() {
 	// 예제 트리 생성
 	tree := &SplayTree{
 		root: &SplayTreeNode{
