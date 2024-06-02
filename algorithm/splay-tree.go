@@ -66,7 +66,7 @@ func (tree *SplayTree) Splay(node *SplayTreeNode) {
 		grandParent := parent.parent
 
 		if grandParent.isPresent() {
-			if node.isSameDirectionChildWithParent() {
+			if checkSameDirectionChildWithParent(node) {
 				// Zig-Zig
 				tree.Rotate(parent)
 			} else {
@@ -76,6 +76,41 @@ func (tree *SplayTree) Splay(node *SplayTreeNode) {
 		}
 		// 공통 rotate 작업
 		tree.Rotate(node)
+	}
+}
+
+func (tree *SplayTree) gather(start, end int) {
+	tree.GetKthNode(end + 1)
+	endNode := tree.root
+
+	tree.GetKthNode(start - 1)
+	startNode := tree.root
+
+	tree.splayAndSetChild(startNode, endNode)
+}
+
+func (tree *SplayTree) splayAndSetChild(rootNode *SplayTreeNode, child *SplayTreeNode) {
+	for child.parent != rootNode {
+		parent := child.parent
+
+		if parent.parent == rootNode {
+			tree.Rotate(child)
+			break
+		}
+
+		if checkSameDirectionChildWithParent(child) {
+			// Zig-Zig
+			tree.Rotate(parent)
+			tree.Rotate(child)
+		} else {
+			// Zig-Zag
+			tree.Rotate(child)
+			tree.Rotate(child)
+		}
+	}
+
+	if rootNode.isNil() {
+		tree.root = child
 	}
 }
 
@@ -226,7 +261,7 @@ func (node *SplayTreeNode) setParentToChild() {
 	}
 }
 
-func (node *SplayTreeNode) isSameDirectionChildWithParent() bool {
+func checkSameDirectionChildWithParent(node *SplayTreeNode) bool {
 	parent := node.parent
 	grandParent := parent.parent
 
