@@ -17,11 +17,11 @@ type SplayTreeNode struct {
 	size, sum, lazy     int64
 }
 
-func (node *SplayTreeNode) isNil() bool {
+func isNil(node *SplayTreeNode) bool {
 	return node == nil
 }
 
-func (node *SplayTreeNode) isPresent() bool {
+func isPresent(node *SplayTreeNode) bool {
 	return node != nil
 }
 
@@ -29,12 +29,12 @@ func (node *SplayTreeNode) updateTreeSizeAndSum() {
 	node.size = 1
 	node.sum = node.key
 
-	if node.left.isPresent() {
+	if isPresent(node.left) {
 		node.size += node.left.size
 		node.sum += node.left.sum
 	}
 
-	if node.right.isPresent() {
+	if isPresent(node.right) {
 		node.size += node.right.size
 		node.sum += node.right.sum
 	}
@@ -42,26 +42,28 @@ func (node *SplayTreeNode) updateTreeSizeAndSum() {
 
 func (tree *SplayTree) Rotate(node *SplayTreeNode) {
 	parent := node.parent
-	if parent.isNil() {
+	if isNil(parent) {
 		return
 	}
+
+	parent.pushLazyValue()
+	node.pushLazyValue()
 
 	node.setParentToChild()
 	node.setGrandParentToParent()
 
-	if node.parent.isNil() {
+	if isNil(node.parent) {
 		tree.root = node
 	}
 
 	// update Child Count
-	node.updateTreeSizeAndSum()
 	parent.updateTreeSizeAndSum()
-	node.pushLazyValue()
-	parent.pushLazyValue()
+	node.updateTreeSizeAndSum()
 }
 
 func (tree *SplayTree) Splay(node *SplayTreeNode) {
-	if tree.root.isNil() || node.isNil() || node == tree.root {
+	if isNil(tree.root) || isNil(node) {
+		//} node.isNil() || node == tree.root {
 		return
 	}
 
@@ -70,11 +72,11 @@ func (tree *SplayTree) Splay(node *SplayTreeNode) {
 		return
 	}
 
-	for node.parent.isPresent() {
+	for isPresent(node.parent) {
 		parent := node.parent
 		grandParent := parent.parent
 
-		if grandParent.isPresent() {
+		if isPresent(grandParent) {
 			if checkSameDirectionChildWithParent(node) {
 				// Zig-Zig
 				tree.Rotate(parent)
@@ -109,13 +111,26 @@ func (tree *SplayTree) gather(start, end int64) {
 
 func (tree *SplayTree) splayAndSetChild(rootNode *SplayTreeNode, child *SplayTreeNode) {
 	// TODO : 여기 의심
-	for child.parent != rootNode && child != tree.root {
-		parent := child.parent
+	if isNil(tree.root) || isNil(child) {
+		return
+	}
 
-		if parent.parent == rootNode {
+	for child.parent != rootNode && isPresent(child.parent) {
+		parent := child.parent
+		grandParent := parent.parent
+
+		if grandParent == rootNode {
 			tree.Rotate(child)
 			break
 		}
+
+		//if checkSameDirectionChildWithParent(child) {
+		//	tree.Rotate(parent)
+		//} else {
+		//	tree.Rotate(child)
+		//}
+		//// 공통 rotate 작업
+		//tree.Rotate(child)
 
 		if checkSameDirectionChildWithParent(child) {
 			// Zig-Zig
@@ -128,20 +143,25 @@ func (tree *SplayTree) splayAndSetChild(rootNode *SplayTreeNode, child *SplayTre
 		}
 	}
 
+	tree.root.updateTreeSizeAndSum()
+	tree.root.pushLazyValue()
+	rootNode.updateTreeSizeAndSum()
+	rootNode.pushLazyValue()
 	child.updateTreeSizeAndSum()
-	if rootNode.isNil() {
+	child.pushLazyValue()
+	if isNil(rootNode) {
 		tree.root = child
 	}
 }
 
 func (tree *SplayTree) Find(key int64) *SplayTreeNode {
 	//fmt.Println("Find key: ", key)
-	if tree.root.isNil() {
+	if isNil(tree.root) {
 		return nil
 	}
 
 	node, parent := tree.findNodeAndParent(key)
-	if node.isPresent() {
+	if isPresent(node) {
 		tree.Splay(node)
 		return node
 	} else {
@@ -152,7 +172,7 @@ func (tree *SplayTree) Find(key int64) *SplayTreeNode {
 
 func (tree *SplayTree) findNodeAndParent(key int64) (node, parent *SplayTreeNode) {
 	node = tree.root
-	for node.isPresent() && key != node.key {
+	for isPresent(node) && key != node.key {
 		parent = node
 		if key < node.key {
 			node = node.left
@@ -166,13 +186,14 @@ func (tree *SplayTree) findNodeAndParent(key int64) (node, parent *SplayTreeNode
 
 func (tree *SplayTree) Insert(key int64) {
 	//fmt.Println("Insert key: ", key)
-	if tree.root.isNil() {
+	if isNil(tree.root) {
+
 		tree.root = &SplayTreeNode{key: key, size: 1, sum: key}
 		return
 	}
 
 	_, parent := tree.findNodeAndParent(key)
-	//if node.isPresent() {
+	//if isPresent(node) {
 	//	return
 	//}
 
@@ -187,28 +208,28 @@ func (tree *SplayTree) Insert(key int64) {
 
 func (tree *SplayTree) Delete(key int64) {
 	//fmt.Println("Delete key: ", key)
-	if tree.Find(key).isNil() {
+	if isNil(tree.Find(key)) {
 		return
 	}
 
 	switch root := tree.root; true {
-	case root.left.isPresent() && root.right.isPresent():
+	case isPresent(root.left) && isPresent(root.right):
 		tree.root = root.left
 		tree.root.parent = nil
 
 		node := tree.root
-		for node.right.isPresent() {
+		for isPresent(node.right) {
 			node = node.right
 		}
 		// 생각해보면, 왼쪽 서브 트리의 가장 오른쪽 노드는, 오른쪽 서브 트리의 루트 보다 작을 수 밖에 없다
 		node.right = root.right
 		root.right.parent = node
 
-	case root.left.isPresent():
+	case isPresent(root.left):
 		tree.root = root.left
 		tree.root.parent = nil
 
-	case root.right.isPresent():
+	case isPresent(root.right):
 		tree.root = root.right
 		tree.root.parent = nil
 
@@ -220,7 +241,7 @@ func (tree *SplayTree) Delete(key int64) {
 func (tree *SplayTree) SumRange(start, end, value int64) {
 	subtreeRoot := tree.GetRangeSubtreeRootWithGather(start, end)
 	tree.root.updateTreeSizeAndSum()
-	if subtreeRoot.isNil() {
+	if isNil(subtreeRoot) {
 		return
 	}
 	subtreeRoot.sum += subtreeRoot.size * value
@@ -231,12 +252,12 @@ func (tree *SplayTree) GetKthNode(k int64) int64 {
 	//fmt.Printf("Get %d th Node", k)
 	k -= 1
 	node := tree.root
-	for node.isPresent() {
-		for node.left.isPresent() && node.left.size > k {
+	for isPresent(node) {
+		for isPresent(node.left) && node.left.size > k {
 			node = node.left
 		}
 
-		if node.left.isPresent() {
+		if isPresent(node.left) {
 			k -= node.left.size
 		}
 
@@ -259,13 +280,13 @@ func (tree *SplayTree) GetKthNodeAndPush(k int64) {
 	node := tree.root
 	node.pushLazyValue()
 
-	for node.isPresent() {
-		for node.left.isPresent() && node.left.size > k {
+	for isPresent(node) {
+		for isPresent(node.left) && node.left.size > k {
 			node = node.left
 			node.pushLazyValue()
 		}
 
-		if node.left.isPresent() {
+		if isPresent(node.left) {
 			k -= node.left.size
 		}
 
@@ -275,12 +296,12 @@ func (tree *SplayTree) GetKthNodeAndPush(k int64) {
 
 		k--
 		node = node.right
-		if node.isPresent() {
+		if isPresent(node) {
 			node.pushLazyValue()
 		}
 	}
 
-	tree.Splay(node)
+	tree.splayAndSetChild(nil, node)
 	//fmt.Printf(" -> %d\n", node.key)
 	return
 }
@@ -289,16 +310,16 @@ func (node *SplayTreeNode) pushLazyValue() {
 	lazyValue := node.lazy
 	node.lazy = 0
 
-	if node.key != math.MinInt64 && node.key != math.MaxInt64 {
-		node.key += lazyValue
-	}
+	//if node.key != math.MinInt64 && node.key != math.MaxInt64 {
+	node.key += lazyValue
+	//}
 
-	if left := node.left; left.isPresent() {
+	if left := node.left; isPresent(left) {
 		left.lazy += lazyValue
 		left.sum += left.size * lazyValue
 	}
 
-	if right := node.right; right.isPresent() {
+	if right := node.right; isPresent(right) {
 		right.lazy += lazyValue
 		right.sum += right.size * lazyValue
 	}
@@ -312,7 +333,7 @@ func (node *SplayTreeNode) setGrandParentToParent() {
 	node.parent = grandParent
 	parent.parent = node
 
-	if node.parent.isNil() {
+	if isNil(node.parent) {
 		return
 	}
 
@@ -363,7 +384,7 @@ func (tree *SplayTree) PrintDFS() {
 }
 
 func printDFS(node *SplayTreeNode, level int, direction string) {
-	if node.isNil() {
+	if isNil(node) {
 		return
 	}
 
@@ -382,7 +403,7 @@ func getIndent(level int) string {
 	return indent
 }
 
-func main() {
+func mainOrigin2() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
 
@@ -391,15 +412,18 @@ func main() {
 	fmt.Fscanln(reader, &N, &M, &K)
 
 	tree := &SplayTree{root: nil}
-	tree.Insert(math.MinInt64)
+	tree.Insert(math.MinInt32)
+	tree.root.updateTreeSizeAndSum()
 	for i := 0; i < N; i++ {
 		var value int64
 		//fmt.Fscanf(reader, "%d", &value)
 		fmt.Fscanln(reader, &value)
 		//fmt.Println(value)
 		tree.Insert(value)
+		tree.root.updateTreeSizeAndSum()
 	}
-	tree.Insert(math.MaxInt64)
+	tree.Insert(math.MaxInt32)
+	tree.root.updateTreeSizeAndSum()
 
 	const (
 		SUM     = 1
