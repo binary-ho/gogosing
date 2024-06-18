@@ -2,6 +2,23 @@ package main
 
 import "fmt"
 
+func testFor() {
+	testLoopIteration()
+}
+
+// 이런 형태의 순회도 있다!!
+func testLoopIteration() {
+	array := []int{10, 20, 30, 40, 50}
+	for index, value := range array {
+		fmt.Println(index, value)
+	}
+
+	// 안 쓰려면 아래 Bar
+	for _, value := range array {
+		fmt.Println(value)
+	}
+}
+
 func goLoop() {
 	sum := 0
 	for i := 0; i < 10; i++ {

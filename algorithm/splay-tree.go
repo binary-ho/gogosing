@@ -408,7 +408,7 @@ func mainOrigin2() {
 	writer := bufio.NewWriter(os.Stdout)
 
 	var N, M, K int
-	//fmt.Fscanf(reader, "%d %d %d", &N, &M, &K)
+	//fmt.Fscanf(reader, "%d %d %d", &maxValue, &M, &K)
 	fmt.Fscanln(reader, &N, &M, &K)
 
 	tree := &SplayTree{root: nil}
