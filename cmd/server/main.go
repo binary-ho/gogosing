@@ -37,17 +37,13 @@ func main() {
 	}
 
 	//addr := os.Getenv
-	serverMux := http.NewServeMux()
-
-	serverMux.HandleFunc("GET /{$}", application.homeView)
-	serverMux.HandleFunc("GET /body-check", application.responseBodyTestView)
-	serverMux.HandleFunc("GET /user/{id}", application.pathParameterView)
-	serverMux.HandleFunc("GET /json", application.jsonView)
-
-	fmt.Println("Hello Guest Book! Starting Server On -> ", PortNumber)
-
-	err := http.ListenAndServe(getAddress(), serverMux)
+	printServerRun()
+	err := http.ListenAndServe(getAddress(), application.routes())
 	fmt.Println("error : ", err)
+}
+
+func printServerRun() (int, error) {
+	return fmt.Println("Hello Guest Book! Starting Server On -> ", PortNumber)
 }
 
 func getAddress() string {

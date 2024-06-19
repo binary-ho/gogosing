@@ -24,7 +24,7 @@ func (app *application) pathParameterView(writer http.ResponseWriter, request *h
 }
 
 func (app *application) jsonView(writer http.ResponseWriter, _ *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Content-Type", "app/json")
 	writeMessage(writer, `{"name":"Jinho"}`)
 	app.logger.Info(`"name":"Jinho"}`)
 }
