@@ -2,9 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 )
+
+type application struct {
+	logger *slog.Logger
+}
 
 type TestResponseBody struct {
 	field1       string
@@ -26,12 +32,17 @@ type innerStruct2 struct {
 const PortNumber = 8080
 
 func main() {
+	application := &application{
+		logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+	}
+
+	//addr := os.Getenv
 	serverMux := http.NewServeMux()
 
-	serverMux.HandleFunc("GET /{$}", homeView)
-	serverMux.HandleFunc("GET /body-check", responseBodyTestView)
-	serverMux.HandleFunc("GET /user/{id}", pathParameterView)
-	serverMux.HandleFunc("GET /json", jsonView)
+	serverMux.HandleFunc("GET /{$}", application.homeView)
+	serverMux.HandleFunc("GET /body-check", application.responseBodyTestView)
+	serverMux.HandleFunc("GET /user/{id}", application.pathParameterView)
+	serverMux.HandleFunc("GET /json", application.jsonView)
 
 	fmt.Println("Hello Guest Book! Starting Server On -> ", PortNumber)
 
