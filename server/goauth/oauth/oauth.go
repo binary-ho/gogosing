@@ -18,12 +18,11 @@ func InitOAuthConfig(property *oAuthProperty) {
 	}
 }
 
-func GetRandomLoginURL() string {
-	token := RandToken()
+func GetRandomLoginURL(token string) string {
 	return Config.AuthCodeURL(token)
 }
 
-func RandToken() string {
+func GetRandToken() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)

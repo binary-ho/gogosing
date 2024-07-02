@@ -1,4 +1,4 @@
-package main
+package splay_tree
 
 func mainOrigin() {
 	// 예제 트리 생성

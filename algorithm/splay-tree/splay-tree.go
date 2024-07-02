@@ -1,4 +1,4 @@
-package main
+package splay_tree
 
 import (
 	"bufio"

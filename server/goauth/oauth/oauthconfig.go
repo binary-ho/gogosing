@@ -1,8 +1,7 @@
 package oauth
 
 import (
-	"fmt"
-	"gogosing/goauth/util"
+	"gogosing/server/goauth/util"
 )
 
 type oAuthProperty struct {
@@ -15,11 +14,10 @@ type oAuthProperty struct {
 }
 
 const (
-	oAuthPropertyPath = "oauth\\secret\\property.yml.yml.yml"
+	oAuthPropertyPath = "server\\goauth\\secret\\property.yml"
 )
 
 func init() {
-	fmt.Println("init oAuthProperty")
 	oAuthProperty := &oAuthProperty{}
 	err := util.FetchYAML(oAuthPropertyPath, &oAuthProperty)
 	InitOAuthConfig(oAuthProperty)
